@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThousandEyes Endpoint Agent Deployment Guide</title>
+<style>
+  :root {
+    --cisco-blue: #049FD9;
+    --dark-blue: #1B3A5C;
+    --accent-green: #6CC04A;
+    --light-bg: #F7F9FB;
+    --card-bg: #FFFFFF;
+    --text: #2D3748;
+    --text-muted: #718096;
+    --border: #E2E8F0;
+    --code-bg: #F0F4F8;
+    --sidebar-w: 280px;
+    --header-h: 64px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: var(--text); background: var(--light-bg); line-height: 1.65; }
+
+  /* ===== HEADER ===== */
+  .site-header { position: fixed; top: 0; left: 0; right: 0; height: var(--header-h); background: var(--dark-blue); z-index: 100; display: flex; align-items: center; padding: 0 24px; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+  .site-header .logo { display: flex; align-items: center; gap: 14px; }
+  .site-header .logo-text { color: #fff; font-size: 13px; font-weight: 600; letter-spacing: .3px; text-transform: uppercase; opacity: .85; }
+  .site-header .title { color: #fff; font-size: 18px; font-weight: 700; margin-left: 20px; }
+  .site-header .title span { color: var(--cisco-blue); }
+  .hamburger { display: none; background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; margin-right: 12px; padding: 4px 8px; }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar { position: fixed; top: var(--header-h); left: 0; width: var(--sidebar-w); height: calc(100vh - var(--header-h)); background: #fff; border-right: 1px solid var(--border); overflow-y: auto; z-index: 90; padding: 20px 0; transition: transform .3s ease; }
+  .sidebar-section { padding: 0 16px; margin-bottom: 20px; }
+  .sidebar-section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); padding: 0 8px; margin-bottom: 8px; }
+  .sidebar a { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 6px; text-decoration: none; color: var(--text); font-size: 13.5px; transition: all .15s; }
+  .sidebar a:hover { background: var(--light-bg); color: var(--cisco-blue); }
+  .sidebar a.active { background: #E8F7FD; color: var(--cisco-blue); font-weight: 600; }
+  .sidebar .phase-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .sidebar .phase-num.p1 { background: #DBEAFE; color: #1E40AF; }
+  .sidebar .phase-num.p2 { background: #E0E7FF; color: #3730A3; }
+  .sidebar .phase-num.p3 { background: #D1FAE5; color: #065F46; }
+  .sidebar .phase-num.p4 { background: #FEF3C7; color: #92400E; }
+  .sidebar .phase-num.p5 { background: #FCE7F3; color: #9D174D; }
+
+  /* Progress bar */
+  .progress-wrap { padding: 16px 24px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+  .progress-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .progress-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--cisco-blue), var(--accent-green)); border-radius: 3px; transition: width .4s ease; width: 0%; }
+
+  /* ===== MAIN ===== */
+  .main { margin-left: var(--sidebar-w); margin-top: var(--header-h); min-height: calc(100vh - var(--header-h)); }
+  .content { max-width: 880px; margin: 0 auto; padding: 40px 32px 80px; }
+
+  /* ===== PHASE BANNER ===== */
+  .phase-banner { padding: 32px 0 24px; margin-bottom: 24px; border-bottom: 3px solid var(--cisco-blue); }
+  .phase-banner .phase-tag { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; padding: 4px 12px; border-radius: 4px; margin-bottom: 10px; }
+  .phase-banner .phase-tag.p1 { background: #DBEAFE; color: #1E40AF; }
+  .phase-banner .phase-tag.p2 { background: #E0E7FF; color: #3730A3; }
+  .phase-banner .phase-tag.p3 { background: #D1FAE5; color: #065F46; }
+  .phase-banner .phase-tag.p4 { background: #FEF3C7; color: #92400E; }
+  .phase-banner .phase-tag.p5 { background: #FCE7F3; color: #9D174D; }
+  .phase-banner h1 { font-size: 28px; color: var(--dark-blue); margin-bottom: 6px; }
+  .phase-banner p { color: var(--text-muted); font-size: 15px; }
+
+  /* ===== SECTIONS ===== */
+  h2 { font-size: 21px; color: var(--dark-blue); margin: 32px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--border); }
+  h3 { font-size: 17px; color: var(--cisco-blue); margin: 24px 0 10px; }
+  p, li { font-size: 15px; line-height: 1.7; }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 8px 0 16px 24px; }
+  li { margin-bottom: 6px; }
+  a { color: var(--cisco-blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  strong { font-weight: 600; }
+
+  /* ===== CARDS ===== */
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin: 16px 0; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+
+  /* ===== TABLES ===== */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 14px; }
+  thead th { background: var(--dark-blue); color: #fff; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 13px; }
+  tbody td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  tbody tr:nth-child(even) { background: var(--light-bg); }
+  tbody tr:hover { background: #EBF8FF; }
+
+  /* ===== CALLOUTS ===== */
+  .callout { border-radius: 8px; padding: 16px 20px; margin: 16px 0; display: flex; gap: 12px; }
+  .callout .icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .callout-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .callout-body { font-size: 14px; }
+  .callout.tip { background: #F0FFF4; border-left: 4px solid var(--accent-green); }
+  .callout.tip .callout-title { color: #276749; }
+  .callout.note { background: #EBF8FF; border-left: 4px solid var(--cisco-blue); }
+  .callout.note .callout-title { color: var(--dark-blue); }
+  .callout.warn { background: #FFFBEB; border-left: 4px solid #F59E0B; }
+  .callout.warn .callout-title { color: #92400E; }
+
+  /* ===== CHECKLIST ===== */
+  .checklist { list-style: none; margin-left: 0; padding: 0; }
+  .checklist li { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14.5px; }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist input[type="checkbox"] { margin-top: 4px; width: 18px; height: 18px; accent-color: var(--accent-green); cursor: pointer; flex-shrink: 0; }
+
+  /* ===== STEP INDICATORS ===== */
+  .step { display: flex; gap: 16px; margin: 20px 0; }
+  .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--cisco-blue); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; margin-top: 2px; }
+  .step-content { flex: 1; }
+  .step-content h4 { font-size: 15px; color: var(--dark-blue); margin-bottom: 4px; }
+  .step-content p { font-size: 14px; color: var(--text); margin-bottom: 6px; }
+
+  /* ===== TABS ===== */
+  .tabs { display: flex; gap: 0; margin: 16px 0 0; border-bottom: 2px solid var(--border); }
+  .tab-btn { padding: 10px 20px; background: none; border: none; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; }
+  .tab-btn:hover { color: var(--cisco-blue); }
+  .tab-btn.active { color: var(--cisco-blue); border-bottom-color: var(--cisco-blue); }
+  .tab-panel { display: none; padding: 20px 0; }
+  .tab-panel.active { display: block; }
+
+  /* ===== RESOURCE CARDS ===== */
+  .resource-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+  .resource-card { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 16px; transition: all .15s; text-decoration: none; color: var(--text); display: block; }
+  .resource-card:hover { border-color: var(--cisco-blue); box-shadow: 0 2px 8px rgba(4,159,217,.12); text-decoration: none; }
+  .resource-card .rc-type { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: var(--cisco-blue); margin-bottom: 6px; }
+  .resource-card .rc-title { font-size: 14px; font-weight: 600; color: var(--dark-blue); margin-bottom: 4px; }
+  .resource-card .rc-desc { font-size: 12px; color: var(--text-muted); }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 900px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); box-shadow: 4px 0 20px rgba(0,0,0,.15); }
+    .main { margin-left: 0; }
+    .hamburger { display: block; }
+    .resource-grid { grid-template-columns: 1fr; }
+  }
+  @media print {
+    .sidebar, .site-header, .hamburger { display: none !important; }
+    .main { margin-left: 0; margin-top: 0; }
+    .content { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <button class="hamburger" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+  <div class="logo">
+    <svg width="28" height="28" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#049FD9"/><path d="M20 32 a12 12 0 1 1 24 0 a12 12 0 1 1 -24 0" fill="none" stroke="#fff" stroke-width="3"/><circle cx="32" cy="32" r="4" fill="#fff"/></svg>
+    <span class="logo-text">Cisco</span>
+  </div>
+  <span class="title"><span>ThousandEyes</span> Endpoint Agent Deployment Guide</span>
+</header>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="progress-wrap">
+    <div class="progress-label"><span>Progress</span><span id="progress-pct">0%</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Overview</div>
+    <a href="javascript:void(0)" onclick="scrollToSection('overview')">Overview &amp; Prerequisites</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Workflow</div>
+    <a href="javascript:void(0)" onclick="scrollToSection('phase1')"><span class="phase-num p1">1</span>Download &amp; Install Agent</a>
+    <a href="javascript:void(0)" onclick="scrollToSection('phase2')"><span class="phase-num p2">2</span>Verify Agent Check-In</a>
+    <a href="javascript:void(0)" onclick="scrollToSection('phase3')"><span class="phase-num p3">3</span>Organize into Agent Groups</a>
+    <a href="javascript:void(0)" onclick="scrollToSection('phase4')"><span class="phase-num p4">4</span>Create Endpoint Tests</a>
+    <a href="javascript:void(0)" onclick="scrollToSection('phase5')"><span class="phase-num p5">5</span>Validate &amp; Next Steps</a>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">Resources</div>
+    <a href="javascript:void(0)" onclick="scrollToSection('resources')">Links &amp; References</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+<div class="content">
+
+<!-- ========== OVERVIEW ========== -->
+<div id="overview">
+  <div class="phase-banner">
+    <h1>ThousandEyes Endpoint Agent Deployment Guide</h1>
+    <p>A step-by-step workflow for getting Endpoint Agents installed on end-user machines and monitoring user experience from day one.</p>
+  </div>
+
+  <p>The <strong>ThousandEyes Endpoint Agent</strong> is a lightweight application installed on end-user Windows or macOS machines. It provides visibility into the complete network path from the user's device — through Wi-Fi, corporate LAN, VPN, and ISP — all the way to cloud applications like Microsoft 365, Webex, Zoom, and Salesforce.</p>
+
+  <h2>What Endpoint Agents Measure</h2>
+  <p>Unlike Enterprise Agents that monitor from fixed network points, Endpoint Agents follow your users. They capture:</p>
+  <ul>
+    <li><strong>Scheduled tests</strong> — continuous synthetic monitoring of target applications</li>
+    <li><strong>Browser sessions</strong> — automatic capture of real user experience data in Chrome or Edge</li>
+    <li><strong>Local network metrics</strong> — Wi-Fi signal quality, gateway latency, DNS performance, VPN status</li>
+    <li><strong>Network topology</strong> — full path from device to destination with per-hop visibility</li>
+  </ul>
+
+  <h2>Prerequisites</h2>
+  <table>
+    <thead><tr><th>Requirement</th><th>Details</th></tr></thead>
+    <tbody>
+      <tr><td><strong>OS (Windows)</strong></td><td>Windows 10 (64-bit) or Windows 11</td></tr>
+      <tr><td><strong>OS (macOS)</strong></td><td>macOS 12 (Monterey) or later</td></tr>
+      <tr><td><strong>Browser Sessions</strong></td><td>Google Chrome or Microsoft Edge for automatic session capture</td></tr>
+      <tr><td><strong>Network Access</strong></td><td>Outbound TCP 443 to <code>*.thousandeyes.com</code> and ThousandEyes collector IPs</td></tr>
+      <tr><td><strong>Admin Rights</strong></td><td>Local administrator privileges required for installation</td></tr>
+      <tr><td><strong>ThousandEyes Account</strong></td><td>Account Admin or Org Admin role to manage agents and tests</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout note">
+    <span class="icon">&#128270;</span>
+    <div><div class="callout-title">Proxy Environments</div><div class="callout-body">If end users route traffic through a proxy, the Endpoint Agent must be configured to use the same proxy. You can pre-configure proxy settings in the installer or push them via GPO/MDM after installation. See the <a href="https://docs.thousandeyes.com/product-documentation/global-vantage-points/endpoint-agents/configuring/endpoint-agent-proxy-configuration-for-scheduled-tests" target="_blank">proxy support documentation</a> for details.</div></div>
+  </div>
+</div>
+
+<!-- ========== PHASE 1 ========== -->
+<div id="phase1">
+  <div class="phase-banner">
+    <span class="phase-tag p1">Phase 1</span>
+    <h1>Download &amp; Install the Endpoint Agent</h1>
+    <p>Obtain the installer from the ThousandEyes portal and deploy it to end-user machines.</p>
+  </div>
+
+  <h2>Step 1: Get the Installer from the Portal</h2>
+  <div class="step"><span class="step-num">1</span><div class="step-content"><p>Log in to <strong><a href="https://app.thousandeyes.com" target="_blank">app.thousandeyes.com</a></strong> with your admin credentials.</p></div></div>
+  <div class="step"><span class="step-num">2</span><div class="step-content"><p>Navigate to <strong>Endpoint Agents &gt; Agent Settings</strong> in the left navigation menu.</p></div></div>
+  <div class="step"><span class="step-num">3</span><div class="step-content"><p>Click <strong>Add New Endpoint Agent</strong>. Select your target OS (Windows or macOS) and download the installer package.</p></div></div>
+  <div class="step"><span class="step-num">4</span><div class="step-content"><p>On the same screen, locate and copy the <strong>connection string</strong> — you will need this during agent setup in Step 2 to associate the agent with your ThousandEyes organization.</p></div></div>
+
+  <h2>Step 2: Install on End-User Machines</h2>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(event, 'tab-windows')">Windows</button>
+    <button class="tab-btn" onclick="switchTab(event, 'tab-mac')">macOS</button>
+    <button class="tab-btn" onclick="switchTab(event, 'tab-mass')">Mass Deployment</button>
+  </div>
+
+  <div id="tab-windows" class="tab-panel active">
+    <p>Run the downloaded <code>.msi</code> installer as a local administrator.</p>
+    <div class="step"><span class="step-num">1</span><div class="step-content"><p>Right-click the <code>.msi</code> file and select <strong>Run as administrator</strong>.</p></div></div>
+    <div class="step"><span class="step-num">2</span><div class="step-content"><p>Follow the installation wizard. Accept the license agreement and click <strong>Install</strong>.</p></div></div>
+    <div class="step"><span class="step-num">3</span><div class="step-content"><p>When prompted, install the <strong>ThousandEyes Recorder extension</strong> for Chrome or Edge to enable browser session capture (highly recommended).</p></div></div>
+    <div class="step"><span class="step-num">4</span><div class="step-content"><p>When prompted during setup, enter the <strong>connection string</strong> copied from the portal in Step 1. This associates the agent with your ThousandEyes organization. The agent service will start automatically once registration is complete, and a ThousandEyes icon will appear in the system tray.</p></div></div>
+    <div class="callout tip">
+      <span class="icon">&#128161;</span>
+      <div><div class="callout-title">Silent Install for IT Deployment</div><div class="callout-body">For silent/unattended installation via SCCM, Intune, or similar tools, use: <code>msiexec /i ThousandEyesEndpointAgent.msi /quiet /norestart</code></div></div>
+    </div>
+  </div>
+
+  <div id="tab-mac" class="tab-panel">
+    <p>Run the downloaded <code>.pkg</code> installer on macOS.</p>
+    <div class="step"><span class="step-num">1</span><div class="step-content"><p>Double-click the <code>.pkg</code> file to launch the installer.</p></div></div>
+    <div class="step"><span class="step-num">2</span><div class="step-content"><p>Follow the prompts. You will be asked to enter your macOS admin password to authorize the installation.</p></div></div>
+    <div class="step"><span class="step-num">3</span><div class="step-content"><p>When prompted during setup, enter the <strong>connection string</strong> copied from the portal in Step 1. This associates the agent with your ThousandEyes organization.</p></div></div>
+    <div class="step"><span class="step-num">4</span><div class="step-content"><p>macOS may prompt you to allow the ThousandEyes system extension in <strong>System Settings &gt; Privacy &amp; Security</strong>. Click <strong>Allow</strong>.</p></div></div>
+    <div class="step"><span class="step-num">5</span><div class="step-content"><p>Install the <strong>ThousandEyes Endpoint Agent Extension</strong> in Chrome or Edge for browser session capture.</p></div></div>
+    <div class="callout warn">
+      <span class="icon">&#9888;</span>
+      <div><div class="callout-title">macOS System Extension Approval</div><div class="callout-body">On macOS 13+, the system extension must be explicitly approved by the user or pre-approved via MDM (e.g., Jamf). Without approval, network path data will be limited. Pre-approving via MDM is strongly recommended for enterprise rollouts.</div></div>
+    </div>
+  </div>
+
+  <div id="tab-mass" class="tab-panel">
+    <p>For large-scale deployments, distribute via your existing endpoint management tooling.</p>
+    <h3>Windows — Group Policy / Intune / SCCM</h3>
+    <p>Use the <code>.msi</code> package with silent install flags. Deploy as a required application in your management console targeting the appropriate device groups. The browser extension can be force-installed via Chrome or Edge policy.</p>
+    <h3>macOS — Jamf / MDM</h3>
+    <p>Upload the <code>.pkg</code> to Jamf Pro (or your MDM). Create a policy targeting the device scope and deploy as a required package. Use a configuration profile to pre-approve the system extension (<code>com.thousandeyes.endpoint-agent</code>) and network extension to avoid user prompts.</p>
+    <div class="callout tip">
+      <span class="icon">&#128161;</span>
+      <div><div class="callout-title">Tip</div><div class="callout-body">For initial rollouts, target a single team or site (e.g., 20–50 machines) before deploying broadly. This lets you validate connectivity and confirm agents appear in the portal before scaling. Coordinate with your IT/endpoint team early — MDM pre-approval for macOS is the most common deployment blocker.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PHASE 2 ========== -->
+<div id="phase2">
+  <div class="phase-banner">
+    <span class="phase-tag p2">Phase 2</span>
+    <h1>Verify Agent Check-In</h1>
+    <p>Confirm agents are registering successfully in the ThousandEyes portal.</p>
+  </div>
+
+  <h2>Confirm Agents Appear in the Portal</h2>
+  <div class="step"><span class="step-num">1</span><div class="step-content"><p>Navigate to <strong>Endpoint Agents &gt; Agent Settings</strong> in the ThousandEyes portal.</p></div></div>
+  <div class="step"><span class="step-num">2</span><div class="step-content"><p>Within a few minutes of installation, the device should appear in the agent list with status <strong>Online</strong> (green indicator).</p></div></div>
+  <div class="step"><span class="step-num">3</span><div class="step-content"><p>Click any agent to inspect its details: OS version, IP address, last check-in time, installed agent version, and browser extension status.</p></div></div>
+
+  <h2>What to Check Per Agent</h2>
+  <table>
+    <thead><tr><th>Field</th><th>Expected Value</th><th>Action if Incorrect</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Status</strong></td><td>Online (green)</td><td>Check network connectivity and proxy settings</td></tr>
+      <tr><td><strong>Agent Version</strong></td><td>Current release</td><td>Agent auto-updates; wait or check for update blocks</td></tr>
+      <tr><td><strong>Browser Extension</strong></td><td>Installed</td><td>Manually install or push via browser policy</td></tr>
+      <tr><td><strong>Network Access</strong></td><td>TCP 443 outbound clear</td><td>Review firewall rules to <code>*.thousandeyes.com</code></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout note">
+    <span class="icon">&#128270;</span>
+    <div><div class="callout-title">Troubleshooting — Agent Not Appearing</div><div class="callout-body">If an agent doesn't show up within 5 minutes: (1) confirm the machine has outbound TCP 443 access, (2) verify the correct installer was used (associated with your ThousandEyes org), (3) check the agent log at <code>C:\ProgramData\ThousandEyes\Endpoint Agent\log</code> (Windows) or <code>/Library/Application Support/ThousandEyes/Endpoint Agent/log</code> (macOS).</div></div>
+  </div>
+</div>
+
+<!-- ========== PHASE 3 ========== -->
+<div id="phase3">
+  <div class="phase-banner">
+    <span class="phase-tag p3">Phase 3</span>
+    <h1>Organize Agents into Groups</h1>
+    <p>Use agent labels to segment users by location, department, or network type for targeted monitoring.</p>
+  </div>
+
+  <p>Agent labels allow you to group Endpoint Agents and assign tests to logical segments — for example, all agents at a branch office, all remote users on VPN, or all agents in a specific business unit.</p>
+
+  <h2>Creating and Applying Agent Labels</h2>
+  <div class="step"><span class="step-num">1</span><div class="step-content"><p>In the ThousandEyes portal, go to <strong>Endpoint Agents &gt; Agent Settings</strong>.</p></div></div>
+  <div class="step"><span class="step-num">2</span><div class="step-content"><p>Select one or more agents using the checkboxes, then click <strong>Labels</strong> &gt; <strong>Add Label</strong>.</p></div></div>
+  <div class="step"><span class="step-num">3</span><div class="step-content"><p>Create a meaningful label name such as <code>Branch-Austin</code>, <code>Remote-VPN</code>, or <code>Finance-Team</code>.</p></div></div>
+  <div class="step"><span class="step-num">4</span><div class="step-content"><p>When creating tests in Phase 4, you will assign them to these labels rather than individual agents — making it easy to scale coverage as more devices are enrolled.</p></div></div>
+
+  <h2>Recommended Label Strategy</h2>
+  <table>
+    <thead><tr><th>Label</th><th>Rationale</th></tr></thead>
+    <tbody>
+      <tr><td><strong>By site/location</strong> (e.g., <code>Site-NYC</code>, <code>Site-Chicago</code>)</td><td>Compare user experience across office locations</td></tr>
+      <tr><td><strong>By network type</strong> (e.g., <code>OnPrem</code>, <code>VPN</code>, <code>DirectInternet</code>)</td><td>Isolate whether issues are VPN-related vs. general</td></tr>
+      <tr><td><strong>By department</strong> (e.g., <code>Sales</code>, <code>Engineering</code>)</td><td>Prioritize monitoring for high-value business units</td></tr>
+      <tr><td><strong>Pilot group</strong> (e.g., <code>Pilot-Wave1</code>)</td><td>Separate initial deployment agents for validation</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout tip">
+    <span class="icon">&#128161;</span>
+    <div><div class="callout-title">Tip</div><div class="callout-body">Even for initial pilots, take the 5 minutes to set up labels. It pays off immediately when you create tests — assigning to <code>Pilot-Wave1</code> is far easier than selecting 20 individual agents. It also makes scaling to a broader rollout much more straightforward.</div></div>
+  </div>
+</div>
+
+<!-- ========== PHASE 4 ========== -->
+<div id="phase4">
+  <div class="phase-banner">
+    <span class="phase-tag p4">Phase 4</span>
+    <h1>Create Endpoint Tests</h1>
+    <p>Configure scheduled tests to continuously monitor the applications your users depend on.</p>
+  </div>
+
+  <p>Navigate to <strong>Endpoint Agents &gt; Test Settings</strong> and click <strong>Add New Test</strong>. Assign each test to an agent label created in Phase 3.</p>
+
+  <!-- Test 1 -->
+  <h2>Test 1: HTTP Server (Application Reachability)</h2>
+  <div class="card">
+    <h3>Use Case</h3>
+    <p>Monitor whether end users can successfully reach critical web applications — Microsoft 365, Salesforce, Zoom, Webex, internal apps, etc. — from their devices and measure response time from the user's network vantage point.</p>
+    <h3>Configuration</h3>
+    <table>
+      <thead><tr><th>Setting</th><th>Value</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Test Type</td><td>HTTP Server</td><td>Under Web category</td></tr>
+        <tr><td>Test Name</td><td><em>(descriptive)</em></td><td>e.g., "M365 Login — All Users"</td></tr>
+        <tr><td>URL</td><td>Full target URL</td><td>e.g., https://login.microsoftonline.com</td></tr>
+        <tr><td>Interval</td><td>5 minutes</td><td>Recommended starting interval</td></tr>
+        <tr><td>Agents</td><td>Select label(s)</td><td>e.g., <code>Pilot-Wave1</code> or <code>Site-NYC</code></td></tr>
+        <tr><td>Network Measurements</td><td>Enabled</td><td>Adds path visualization and loss/latency metrics</td></tr>
+        <tr><td>Alerts</td><td>Enable default rules</td><td>Customize availability and latency thresholds</td></tr>
+      </tbody>
+    </table>
+    <h3>What You Get</h3>
+    <ul>
+      <li><strong>Availability</strong> percentage and HTTP response codes per agent</li>
+      <li><strong>Response time breakdown:</strong> DNS, TCP connect, SSL/TLS, TTFB</li>
+      <li><strong>Path Visualization</strong> from each user device to the target — showing Wi-Fi, gateway, ISP, and cloud hops</li>
+      <li><strong>Side-by-side comparison</strong> between office users, VPN users, and remote users</li>
+    </ul>
+  </div>
+
+  <!-- Test 2 -->
+  <h2>Test 2: Agent-to-Server (Network Path Monitoring)</h2>
+  <div class="card">
+    <h3>Use Case</h3>
+    <p>Monitor the raw network path from end-user devices to a specific server or gateway — ideal for monitoring VPN concentrators, data center front-ends, or UC&amp;C signaling servers.</p>
+    <h3>Configuration</h3>
+    <table>
+      <thead><tr><th>Setting</th><th>Value</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Test Type</td><td>Agent to Server</td><td>Under Network category</td></tr>
+        <tr><td>Test Name</td><td><em>(descriptive)</em></td><td>e.g., "VPN Gateway — Remote Users"</td></tr>
+        <tr><td>Target</td><td>Server IP or hostname</td><td>e.g., VPN concentrator IP or gateway hostname</td></tr>
+        <tr><td>Protocol</td><td>TCP (recommended)</td><td>Use ICMP if TCP is filtered</td></tr>
+        <tr><td>Interval</td><td>5 minutes</td><td>Adjust based on unit budget</td></tr>
+        <tr><td>Agents</td><td>Select label(s)</td><td>e.g., <code>Remote-VPN</code></td></tr>
+        <tr><td>Alerts</td><td>Enable default rules</td><td>Set packet loss and latency thresholds</td></tr>
+      </tbody>
+    </table>
+    <h3>What You Get</h3>
+    <ul>
+      <li><strong>Packet loss, latency, and jitter</strong> from every enrolled device</li>
+      <li><strong>Path Visualization</strong> with hop-by-hop detail, ASN data, and MPLS labels</li>
+      <li><strong>Trend data</strong> to distinguish transient vs. sustained path degradation</li>
+    </ul>
+  </div>
+
+  <!-- Test 3 -->
+  <h2>Test 3: Browser Session Capture (Real User Monitoring)</h2>
+  <div class="card">
+    <h3>Use Case</h3>
+    <p>Beyond scheduled tests, the Endpoint Agent can passively capture real browser sessions when users visit monitored domains. This provides actual end-user experience data without any user action required.</p>
+    <h3>Configuration</h3>
+    <div class="step"><span class="step-num">1</span><div class="step-content"><p>Navigate to <strong>Endpoint Agents &gt; Browser Sessions &gt; Monitored Domain Sets</strong>.</p></div></div>
+    <div class="step"><span class="step-num">2</span><div class="step-content"><p>Click <strong>Add New Monitored Domain Set</strong> and enter the domains to monitor (e.g., <code>*.microsoft.com</code>, <code>zoom.us</code>, <code>salesforce.com</code>).</p></div></div>
+    <div class="step"><span class="step-num">3</span><div class="step-content"><p>Assign the domain set to the relevant agent labels. The browser extension handles capture automatically once configured.</p></div></div>
+    <h3>What You Get</h3>
+    <ul>
+      <li><strong>Real page load timings</strong> from actual user sessions — not synthetic probes</li>
+      <li><strong>Waterfall data</strong> showing load time per page resource</li>
+      <li><strong>Network path</strong> captured at the moment of each user visit</li>
+      <li><strong>Local network context</strong> — Wi-Fi SSID, signal strength, gateway latency at time of session</li>
+    </ul>
+    <div class="callout tip">
+      <span class="icon">&#128161;</span>
+      <div><div class="callout-title">Browser Extension Required</div><div class="callout-body">Browser session capture requires the ThousandEyes Endpoint Agent browser extension installed in Chrome or Edge. Confirm extension status for all agents under <strong>Agent Settings</strong> before enabling monitored domains.</div></div>
+    </div>
+  </div>
+
+  <div class="callout tip">
+    <span class="icon">&#128161;</span>
+    <div><div class="callout-title">Recommended Starter Test Package</div><div class="callout-body">A good starting point is: one HTTP Server test to your most critical cloud app (e.g., M365 or Zoom), one Agent-to-Server test to your VPN gateway (if applicable), and a monitored domain set covering 3–5 key SaaS domains. This provides immediate, meaningful visibility across your most important services.</div></div>
+  </div>
+</div>
+
+<!-- ========== PHASE 5 ========== -->
+<div id="phase5">
+  <div class="phase-banner">
+    <span class="phase-tag p5">Phase 5</span>
+    <h1>Validate &amp; Next Steps</h1>
+    <p>Confirm the deployment is working end-to-end and identify opportunities to expand monitoring coverage.</p>
+  </div>
+
+  <h2>Validation Checklist</h2>
+  <div class="card">
+    <ul class="checklist" id="validation-checklist">
+      <li><input type="checkbox" onchange="updateProgress()"><span>Endpoint Agents appear in <strong>Endpoint Agents &gt; Agent Settings</strong> with "Online" status</span></li>
+      <li><input type="checkbox" onchange="updateProgress()"><span>Browser extension shows as "Installed" on all agents</span></li>
+      <li><input type="checkbox" onchange="updateProgress()"><span>Scheduled tests (HTTP Server, Agent-to-Server) return data within 10 minutes of creation</span></li>
+      <li><input type="checkbox" onchange="updateProgress()"><span>Path Visualization displays hop-by-hop path data for network tests</span></li>
+      <li><input type="checkbox" onchange="updateProgress()"><span>Browser Sessions view shows captured sessions for monitored domains</span></li>
+      <li><input type="checkbox" onchange="updateProgress()"><span>Alert rules are active and configured with appropriate thresholds</span></li>
+      <li><input type="checkbox" onchange="updateProgress()"><span>Agents are correctly labeled and tests are assigned to labels (not individual agents)</span></li>
+    </ul>
+  </div>
+
+  <h2>Recommended Next Steps</h2>
+  <ul>
+    <li>Explore the <strong>Endpoint Agents &gt; Views</strong> dashboards — Network Topology, Browser Sessions, and Scheduled Tests</li>
+    <li>Configure <strong>alert notifications</strong> (email, Slack, PagerDuty, webhook) so the right teams are notified on degradation</li>
+    <li>Expand the monitored domain set to cover additional SaaS applications</li>
+    <li>Roll out agents to additional user groups beyond the initial pilot</li>
+    <li>Explore integrating ThousandEyes alerts into your ITSM platform (ServiceNow, etc.)</li>
+    <li>Schedule a review 2 weeks post-deployment to assess findings and adjust test coverage</li>
+  </ul>
+
+  <h2>Licensing Reference</h2>
+  <p>Endpoint Agent licensing is <strong>per-seat</strong> — each enrolled device consumes one license. There are three license tiers, each offering a different level of monitoring capability.</p>
+
+  <table>
+    <thead><tr><th>Capability</th><th>Advantage</th><th>Essentials</th><th>Embedded</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Scheduled Tests</strong> (HTTP Server, Agent-to-Server)</td><td>&#10003;</td><td>&#10003;</td><td>&#10003; (1 scheduled)</td></tr>
+      <tr><td><strong>Browser Session Capture</strong></td><td>&#10003;</td><td>&#10007;</td><td>&#10007;</td></tr>
+      <tr><td><strong>Local Network Metrics</strong> (Wi-Fi, gateway, VPN)</td><td>&#10003;</td><td>&#10003;</td><td>&#10003;</td></tr>
+      <tr><td><strong>Path Visualization</strong></td><td>&#10003;</td><td>&#10003;</td><td>&#10007;</td></tr>
+      <tr><td><strong>Concurrent Tests per Agent</strong></td><td>Up to 10 (dynamic + scheduled)</td><td>Up to 4</td><td>1 dynamic + 1 scheduled</td></tr>
+      <tr><td><strong>Data Retention</strong></td><td>30 days</td><td>14 days</td><td>4 days</td></tr>
+      <tr><td><strong>How Assigned</strong></td><td>Default for new agents; sold standalone</td><td>Assigned when Advantage unavailable; sold standalone</td><td>Bundled only — assigned automatically at purchase</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card">
+    <h3>Advantage</h3>
+    <p>The most comprehensive Endpoint Agent license and the <strong>default assigned to all new agents</strong>. Advantage supports up to <strong>10 concurrent tests per agent</strong> (across dynamic and scheduled), real-user browser session capture, full path visualization, and always-on local network metrics, with <strong>30-day data retention</strong>. This is the recommended license for users whose experience with critical applications needs to be actively monitored and troubleshot end-to-end.</p>
+  </div>
+
+  <div class="card">
+    <h3>Essentials</h3>
+    <p>A mid-tier license that supports up to <strong>4 concurrent tests per agent</strong> and <strong>14-day data retention</strong>. Essentials includes scheduled synthetic tests, path visualization, and local network metrics, but does not include browser session capture. Agents are assigned an Essentials license when Advantage licenses are not available in the org's pool — making license availability management an important operational consideration at scale.</p>
+  </div>
+
+  <div class="card">
+    <h3>Embedded</h3>
+    <p>A lightweight entitlement available <strong>exclusively through specific Cisco product bundles</strong> (e.g., Cisco Secure Access) — it is not sold standalone. Embedded is assigned automatically at purchase and supports <strong>1 dynamic test and 1 scheduled test</strong> per agent, with <strong>4-day data retention</strong>. It provides baseline local network health metrics but does not include browser session capture or path visualization. If your organization holds qualifying Cisco subscriptions, check whether Embedded entitlements are already available before purchasing additional licenses.</p>
+  </div>
+
+  <div class="callout tip">
+    <span class="icon">&#128161;</span>
+    <div><div class="callout-title">Tip</div><div class="callout-body"><strong>Advantage</strong> is the default license for all new agents and provides the most complete visibility — including browser session data and 30-day retention. If your organization also holds qualifying Cisco product subscriptions (e.g., Cisco Secure Access), check whether <strong>Embedded</strong> entitlements are already included before purchasing additional licenses.</div></div>
+  </div>
+</div>
+
+<!-- ========== RESOURCES ========== -->
+<div id="resources">
+  <div class="phase-banner">
+    <h1>Resource Links</h1>
+    <p>Official documentation, downloads, and references for Endpoint Agent deployment.</p>
+  </div>
+
+  <h2>Installation &amp; Setup</h2>
+  <div class="resource-grid">
+    <a class="resource-card" href="https://docs.thousandeyes.com/product-documentation/global-vantage-points/endpoint-agents/installing/installing-endpoint-agents" target="_blank">
+      <div class="rc-type">Docs</div>
+      <div class="rc-title">Installing Endpoint Agents</div>
+      <div class="rc-desc">Official installation guide for Windows and macOS</div>
+    </a>
+    <a class="resource-card" href="https://docs.thousandeyes.com/product-documentation/global-vantage-points/endpoint-agents/installing/endpoint-agent-system-requirements" target="_blank">
+      <div class="rc-type">Docs</div>
+      <div class="rc-title">Endpoint Agent System Requirements</div>
+      <div class="rc-desc">Supported OS versions, browser compatibility, and network requirements</div>
+    </a>
+    <a class="resource-card" href="https://docs.thousandeyes.com/product-documentation/global-vantage-points/endpoint-agents/proxy-support-for-endpoint-agents" target="_blank">
+      <div class="rc-type">Docs</div>
+      <div class="rc-title">Proxy Support for Endpoint Agents</div>
+      <div class="rc-desc">Configure proxy settings for agents in proxy environments</div>
+    </a>
+    <a class="resource-card" href="https://docs.thousandeyes.com/product-documentation/global-vantage-points/endpoint-agents/installing/mass-deployment-of-endpoint-agents" target="_blank">
+      <div class="rc-type">Docs</div>
+      <div class="rc-title">Mass Deployment of Endpoint Agents</div>
+      <div class="rc-desc">Guidance for deploying via GPO, SCCM, Jamf, and Intune</div>
+    </a>
+  </div>
+
+  <h2>Tests &amp; Browser Sessions</h2>
+  <div class="resource-grid">
+    <a class="resource-card" href="https://docs.thousandeyes.com/product-documentation/endpoint-experience/scheduled-tests" target="_blank">
+      <div class="rc-type">Docs</div>
+      <div class="rc-title">Endpoint Scheduled Tests</div>
+      <div class="rc-desc">Configure HTTP Server and Agent-to-Server tests for Endpoint Agents</div>
+    </a>
+    <a class="resource-card" href="https://docs.thousandeyes.com/product-documentation/endpoint-experience/browser-session-data" target="_blank">
+      <div class="rc-type">Docs</div>
+      <div class="rc-title">Browser Session Data</div>
+      <div class="rc-desc">Understanding and configuring browser session capture</div>
+    </a>
+    <a class="resource-card" href="https://docs.thousandeyes.com/product-documentation/endpoint-experience/monitored-domain-sets" target="_blank">
+      <div class="rc-type">Docs</div>
+      <div class="rc-title">Monitored Domain Sets</div>
+      <div class="rc-desc">Configure which domains trigger automatic session capture</div>
+    </a>
+    <a class="resource-card" href="https://docs.thousandeyes.com/product-documentation/endpoint-experience/endpoint-agent-labels" target="_blank">
+      <div class="rc-type">Docs</div>
+      <div class="rc-title">Endpoint Agent Labels</div>
+      <div class="rc-desc">Organize and group agents for targeted test assignment</div>
+    </a>
+  </div>
+
+  <h2>Views &amp; Analysis</h2>
+  <div class="resource-grid">
+    <a class="resource-card" href="https://docs.thousandeyes.com/product-documentation/endpoint-experience/endpoint-agent-views-reference" target="_blank">
+      <div class="rc-type">Docs</div>
+      <div class="rc-title">Endpoint Agent Views Reference</div>
+      <div class="rc-desc">How to navigate and interpret Endpoint Agent dashboards</div>
+    </a>
+    <a class="resource-card" href="https://docs.thousandeyes.com/product-documentation/endpoint-experience/local-network-monitoring" target="_blank">
+      <div class="rc-type">Docs</div>
+      <div class="rc-title">Local Network Monitoring</div>
+      <div class="rc-desc">Understanding Wi-Fi, gateway, and VPN metrics collected by Endpoint Agents</div>
+    </a>
+  </div>
+
+  <h2>Getting Started Resources</h2>
+  <div class="resource-grid">
+    <a class="resource-card" href="https://docs.thousandeyes.com/product-documentation/getting-started/getting-started-with-endpoint-agents" target="_blank">
+      <div class="rc-type">Getting Started</div>
+      <div class="rc-title">Getting Started with Endpoint Agents</div>
+      <div class="rc-desc">End-to-end onboarding guide from ThousandEyes</div>
+    </a>
+    <a class="resource-card" href="https://docs.thousandeyes.com/product-documentation/getting-started/getting-started-with-account-setup" target="_blank">
+      <div class="rc-type">Getting Started</div>
+      <div class="rc-title">Account Setup Guide</div>
+      <div class="rc-desc">Configure users, roles, and account groups</div>
+    </a>
+  </div>
+</div>
+
+</div><!-- .content -->
+</div><!-- .main -->
+
+<script>
+// Tab switching
+function switchTab(e, tabId) {
+  var btn = e.currentTarget || e.srcElement || this;
+  var tabContainer = btn.closest ? btn.closest('.tabs') : (function(el){while(el&&!el.classList.contains('tabs'))el=el.parentNode;return el;})(btn);
+  var contentParent = tabContainer ? tabContainer.parentNode : document;
+  // Deactivate all tab buttons in this group
+  tabContainer.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  // Deactivate all panels that are siblings of this tab group
+  contentParent.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  btn.classList.add('active');
+  var panel = document.getElementById(tabId);
+  if (panel) panel.classList.add('active');
+}
+
+// Progress tracking from checkboxes
+function updateProgress() {
+  const boxes = document.querySelectorAll('.checklist input[type="checkbox"]');
+  const checked = document.querySelectorAll('.checklist input[type="checkbox"]:checked');
+  const pct = Math.round((checked.length / boxes.length) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+}
+
+// Scroll to section (SharePoint-safe — avoids hash navigation)
+function scrollToSection(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var headerH = 80;
+  var top = el.getBoundingClientRect().top + window.pageYOffset - headerH;
+  window.scrollTo({ top: top, behavior: 'smooth' });
+}
+
+// Active sidebar link on scroll
+const sections = ['overview','phase1','phase2','phase3','phase4','phase5','resources'];
+window.addEventListener('scroll', () => {
+  const scrollY = window.scrollY + 120;
+  let current = sections[0];
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.offsetTop <= scrollY) current = id;
+  });
+  document.querySelectorAll('.sidebar a').forEach(a => {
+    var onclick = a.getAttribute('onclick') || '';
+    a.classList.toggle('active', onclick.indexOf("'" + current + "'") !== -1);
+  });
+});
+
+// Close sidebar on mobile link click
+document.querySelectorAll('.sidebar a').forEach(a => {
+  a.addEventListener('click', () => {
+    if (window.innerWidth <= 900) document.querySelector('.sidebar').classList.remove('open');
+  });
+});
+</script>
+</body>
+</html>
